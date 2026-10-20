@@ -28,8 +28,8 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: '缺少 data 字段' }), { status: 400, headers });
     }
 
-    if (env && env.DATA_KV) {
-      await env.DATA_KV.put('factory_data', JSON.stringify(body.data));
+    if (env && env["qa-question-kv"]) {
+      await env["qa-question-kv"].put('factory_data', JSON.stringify(body.data));
       return new Response(JSON.stringify({ success: true, message: '数据已更新' }), { status: 200, headers });
     } else {
       return new Response(JSON.stringify({ error: 'KV 未绑定' }), { status: 500, headers });

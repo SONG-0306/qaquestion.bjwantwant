@@ -53,8 +53,8 @@ export async function onRequest(context) {
 
   try {
     // 优先从 KV 读取缓存数据
-    if (env && env.DATA_KV) {
-      const cached = await env.DATA_KV.get('factory_data', 'json');
+    if (env && env["qa-question-kv"]) {
+      const cached = await env["qa-question-kv"].get('factory_data', 'json');
       if (cached) {
         return new Response(JSON.stringify({ success: true, source: 'kv', data: cached }), { status: 200, headers });
       }
