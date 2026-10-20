@@ -266,15 +266,31 @@ window.rd=function(){
   el.style.display='block';
   el.style.background='#fff8e1';
   el.style.color='#e65100';
-  el.innerHTML='正在从智能表格拉取最新数据...';
+  el.innerHTML='正在从云端拉取最新数据...';
   var btn=document.querySelector('.ub button');
   if(btn)btn.disabled=true;
-  setTimeout(function(){
-    el.innerHTML='当前版本为内嵌兜底数据。部署到 Cloudflare Pages 后，前端将通过 fetch("/api/data") 自动拉取智能表格最新数据。<br><br><button onclick="location.reload()" style="padding:6px 18px;background:#3949ab;color:#fff;border:none;border-radius:5px;font-size:13px;cursor:pointer;">重新加载页面</button>';
-    el.style.background='#f5f5ff';
-    el.style.color='#333';
+  fetch('/api/data').then(function(r){
+    if(!r.ok)throw new Error('请求失败: '+r.status);
+    return r.json();
+  }).then(function(res){
+    if(!res.success||!res.data)throw new Error('数据格式异常');
+    var d=res.data;
+    D=d.factories.map(function(f){
+      return {n:f.name,p:f.total,c:f.completed,pe:f.unfinished,r:0,i:0,ra:f.total>0?(f.completed/f.total):0,e:f.eval};
+    });
+    CD=d.categories.map(function(c){return {n:c.name,c:c.count};});
+    PD=d.priorities.map(function(p){return {n:p.name,c:p.count,cl:p.color};});
+    renderAll();
+    el.style.background='#e8f5e9';
+    el.style.color='#2e7d32';
+    el.innerHTML='数据已更新！来源：'+res.source+'<br><br><button onclick="location.reload()" style="padding:6px 16px;background:#3949ab;color:#fff;border:none;border-radius:5px;font-size:13px;cursor:pointer;">刷新页面</button>';
     if(btn)btn.disabled=false;
-  },400);
+  })['catch'](function(err){
+    el.style.background='#fce4ec';
+    el.style.color='#c62828';
+    el.innerHTML='拉取数据失败：'+err.message+'<br><br>当前显示的是内嵌兜底数据，请检查部署配置后重试。';
+    if(btn)btn.disabled=false;
+  });
 };
 
 // AI
@@ -381,6 +397,62 @@ window.drawC=function(){
     document.getElementById('cs').innerHTML='图表异常：'+e.message;
   }
 };
+
+function renderAll(){
+  try{
+    var t=D.reduce(function(s,f){return s+f.p},0);
+    var co=D.reduce(function(s,f){return s+f.c},0);
+    var pe=D.reduce(function(s,f){return s+f.pe},0);
+    var ra=t>0?(co/t*100).toFixed(1):0;
+    document.getElementById('ot').innerHTML=
+      '<p>截至 <strong>2026年10月20日</strong>，北京总厂日稽核问题一览表共收录 <strong>'+t+'</strong> 项稽核问题，覆盖 <strong>'+D.length+'</strong> 个工厂及部门。已完成整改 <strong>'+co+'</strong> 项，综合完成率 <strong>'+ra+'%</strong>。</p>'+
+      '<p>重复发生问题 <strong>0</strong> 项，重要问题点 <strong>0</strong> 项。</p>';
+    var ca=[
+      {v:t,l:'问题总数',cl:''},
+      {v:co,l:'已完成整改',cl:'gr'},
+      {v:pe,l:'未完成',cl:'re'},
+      {v:0,l:'重复发生',cl:'or'},
+      {v:D.length,l:'覆盖工厂',cl:''},
+      {v:ra+'%',l:'综合完成率',cl:'gr'}
+    ];
+    document.getElementById('sr').innerHTML=ca.map(function(x){
+      return '<div class="sd"><div class="n '+x.cl+'">'+x.v+'</div><div class="l">'+x.l+'</div></div>';
+    }).join('');
+    var s=D.slice().sort(function(a,b){return b.p-a.p});
+    document.getElementById('ft').innerHTML=s.map(function(f){
+      var rr=(f.ra*100).toFixed(1);
+      var tc=f.e==='优秀'?'tg1':f.e==='良好'?'tg2':f.e==='达标'?'tg3':'tg4';
+      var bc=f.ra>=0.957?'#43a047':f.ra>=0.857?'#3949ab':f.ra>=0.734?'#fb8c00':'#c62828';
+      return '<tr><td><strong>'+f.n+'</strong></td><td>'+f.p+'</td><td>'+f.c+'</td><td>'+f.pe+'</td><td><span class="rb"><span class="rf" style="width:'+rr+'%;background:'+bc+';"></span></span>'+rr+'%</td><td>0</td><td>0</td><td><span class="tg '+tc+'">'+f.e+'</span></td></tr>';
+    }).join('');
+    var ct=CD.reduce(function(s,x){return s+x.c},0);
+    var t5=CD.slice(0,5);
+    var t5s=t5.reduce(function(s,x){return s+x.c},0);
+    document.getElementById('ct').innerHTML='<p>稽核问题涵盖 <strong>'+CD.length+'</strong> 个类别，Top 5 高频问题如下：</p>';
+    var ch='';
+    for(var i=0;i<CD.length;i++){
+      var pp=(CD[i].c/ct*100).toFixed(1);
+      ch+='<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #f5f5f5;">';
+      ch+='<span style="width:100px;font-size:13px;"><strong>'+CD[i].n+'</strong></span>';
+      ch+='<div style="flex:1;height:18px;background:#f0f0f0;border-radius:3px;margin:0 10px;overflow:hidden;">';
+      ch+='<div style="height:100%;width:'+pp+'%;background:'+(i<5?'#3949ab':'#b0bec5')+';border-radius:3px;"></div></div>';
+      ch+='<span style="width:70px;text-align:right;font-size:13px;font-weight:600;color:'+(i<5?'#1a237e':'#888')+';">'+CD[i].c+' ('+pp+'%)</span></div>';
+    }
+    document.getElementById('cl').innerHTML=ch;
+    document.getElementById('ct').innerHTML+='<p>以上五类问题合计 <strong>'+t5s+'</strong> 项，占全部问题的 <strong>'+(t5s/ct*100).toFixed(1)+'%</strong>，是当前稽核工作的主要矛盾。</p>';
+    var sh='';
+    sh+='<div class="sc"><h5>建议一：聚焦高频问题类型，制定专项整改方案</h5><p>针对以下高频问题类别，建议成立专项整改小组：';
+    for(var i=0;i<Math.min(3,t5.length);i++){sh+='<br>'+t5[i].n+'（'+t5[i].c+' 项）';}
+    sh+='</p></div>';
+    sh+='<div class="sc wn"><h5>建议二：重点帮扶低完成率工厂</h5><p>各厂完成率均较理想，继续保持当前管理力度。</p></div>';
+    sh+='<div class="sc wn"><h5>建议三：降低重复发生率，强化根因分析</h5><p>对重复发生问题逐一开展根因分析（5Why），完善 SOP，建立问题闭环跟踪机制。</p></div>';
+    sh+='<div class="sc ok"><h5>建议四：建立数据驱动的持续改善文化</h5><p>定期生成稽核分析报告，利用数据自动刷新能力追踪改善效果，纳入绩效考核。</p></div>';
+    document.getElementById('sg').innerHTML=sh;
+    document.getElementById('gt').textContent=new Date().toLocaleString('zh-CN');
+  }catch(e){
+    document.getElementById('ot').innerHTML='<p style="color:#c62828;">渲染异常：'+e.message+'。请刷新页面重试。</p>';
+  }
+}
 
 document.addEventListener('DOMContentLoaded',init);
 </script>
