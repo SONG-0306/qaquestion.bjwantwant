@@ -121,6 +121,8 @@ table.tb tr:hover td{background:#f5f5ff}
   <div id="cl" style="margin:10px 0;"></div>
 </div>
 
+
+
 <div class="c">
   <div class="ct">五、未来工作方向与改进建议</div>
   <div id="sg"></div>
@@ -164,25 +166,25 @@ table.tb tr:hover td{background:#f5f5ff}
 <script>
 // 数据
 var D=[
-  {n:"北京乳旺一厂",p:85,c:75,pe:10,r:0,i:0,ra:0.882,e:"达标"},
-  {n:"北京乳旺二厂",p:280,c:269,pe:11,r:23,i:0,ra:0.961,e:"良好"},
-  {n:"北京大旺一厂",p:216,c:212,pe:4,r:0,i:0,ra:0.982,e:"优秀"},
-  {n:"北京大旺二厂",p:51,c:51,pe:0,r:0,i:0,ra:1.000,e:"优秀"},
-  {n:"北京大旺三厂",p:122,c:119,pe:3,r:0,i:0,ra:0.975,e:"优秀"},
-  {n:"北京必旺厂",p:48,c:35,pe:13,r:0,i:0,ra:0.729,e:"偏低"},
-  {n:"北京来旺厂",p:60,c:56,pe:4,r:0,i:1,ra:0.933,e:"良好"},
-  {n:"北京行政部门",p:4,c:0,pe:4,r:0,i:0,ra:0.000,e:"偏低"}
+  {n:"北京乳旺一厂",p:85,c:75,pe:15,r:0,i:0,ra:0.881,e:"良好"},
+  {n:"北京乳旺二厂",p:227,c:217,pe:10,r:0,i:0,ra:0.956,e:"优秀"},
+  {n:"北京大旺一厂",p:143,c:136,pe:7,r:0,i:0,ra:0.950,e:"优秀"},
+  {n:"北京大旺二厂",p:24,c:18,pe:6,r:0,i:0,ra:0.750,e:"偏低"},
+  {n:"北京大旺三厂",p:84,c:76,pe:8,r:0,i:0,ra:0.890,e:"达标"},
+  {n:"北京必旺厂",p:30,c:28,pe:2,r:0,i:0,ra:0.933,e:"优秀"},
+  {n:"北京来旺厂",p:27,c:27,pe:0,r:0,i:0,ra:1.000,e:"优秀"},
+  {n:"北京行政部门",p:4,c:0,pe:4,r:0,i:0,ra:0.100,e:"--"}
 ];
 var CD=[
-  {n:"鼠虫害管理",c:174},{n:"制程管理",c:150},{n:"设备管理",c:136},
-  {n:"卫生管理",c:117},{n:"异物管理",c:107},{n:"交叉污染",c:53},
-  {n:"计量管理",c:36},{n:"化学品管理",c:35},{n:"原物料管理",c:22},
-  {n:"标识管理",c:14},{n:"人员管理",c:8},{n:"文件记录管理",c:6},{n:"厂房建筑",c:2},{n:"食品添加剂",c:1}
+  {n:"鼠虫害管理",c:174},{n:"制程管理",c:150},{n:"设备管理",c:138},
+  {n:"卫生管理",c:110},{n:"异物管理",c:93},{n:"交叉污染",c:49},
+  {n:"化学品管理",c:34},{n:"计量管理",c:32},{n:"原物料管理",c:21},
+  {n:"标识管理",c:13},{n:"人员管理",c:8},{n:"文件记录管理",c:6},{n:"厂房建筑",c:2},{n:"食品添加剂",c:1}
 ];
 var PD=[
-  {n:"一般-不紧急",c:332,cl:"#66bb6a"},
-  {n:"一般-紧急",c:307,cl:"#fb8c00"},
-  {n:"重要-紧急",c:164,cl:"#c62828"},
+  {n:"一般-不紧急",c:296,cl:"#66bb6a"},
+  {n:"一般-紧急",c:229,cl:"#fb8c00"},
+  {n:"重要-紧急",c:107,cl:"#c62828"},
   {n:"重要-不紧急",c:57,cl:"#f9a825"}
 ];
 
@@ -195,7 +197,7 @@ function init(){
     var im=D.reduce(function(s,f){return s+f.i},0);
     var ra=t>0?(co/t*100).toFixed(1):0;
     document.getElementById('ot').innerHTML=
-      '<p>截至 <strong>2026年10月19日</strong>，北京总厂日稽核问题一览表共收录 <strong>'+t+'</strong> 项稽核问题，覆盖 <strong>'+D.length+'</strong> 个工厂及部门。已完成整改 <strong>'+co+'</strong> 项，综合完成率 <strong>'+ra+'%</strong>。</p>'+
+      '<p>截至 <strong>2026年10月20日</strong>，北京总厂日稽核问题一览表共收录 <strong>'+t+'</strong> 项稽核问题，覆盖 <strong>'+D.length+'</strong> 个工厂及部门。已完成整改 <strong>'+co+'</strong> 项，综合完成率 <strong>'+ra+'%</strong>。</p>'+
       '<p>重复发生问题 <strong>'+r+'</strong> 项，重要问题点 <strong>'+im+'</strong> 项。</p>';
     var ca=[
       {v:t,l:'问题总数',cl:''},
@@ -230,6 +232,13 @@ function init(){
     }
     document.getElementById('cl').innerHTML=ch;
     document.getElementById('ct').innerHTML+='<p>以上五类问题合计 <strong>'+t5s+'</strong> 项，占全部问题的 <strong>'+(t5s/ct*100).toFixed(1)+'%</strong>，是当前稽核工作的主要矛盾。</p>';
+    var ph='<p>稽核问题按紧急程度分为四档：</p>';
+    for(var i=0;i<PD.length;i++){
+      var x=PD[i];
+      var pct=(x.c/t*100).toFixed(1);
+      ph+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;"><span style="width:12px;height:12px;border-radius:3px;background:'+x.cl+';flex-shrink:0;"></span><span style="flex:1;"><strong>'+x.n+'</strong>：'+x.c+' 项（'+pct+'%）</span></div>';
+    }
+    
     var lr=D.filter(function(f){return f.ra<0.85});
     var sh='';
     sh+='<div class="sc"><h5>建议一：聚焦高频问题类型，制定专项整改方案</h5><p>针对以下高频问题类别，建议成立专项整改小组：';
