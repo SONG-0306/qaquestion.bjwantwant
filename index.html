@@ -132,7 +132,7 @@ table.tb tr:hover td{background:#f5f5ff}
   <div class="ct">六、数据更新</div>
   <div class="ub">
     <button onclick="rd()">从智能表格刷新数据</button>
-    <span class="uh">点击后将尝试重新加载智能表格最新数据</span>
+    <span class="uh">点击后将通过企微API直接从智能表格拉取最新数据并更新页面</span>
   </div>
   <div class="us" id="rs"></div>
 </div>
@@ -198,7 +198,23 @@ var PD=[
 {n:"重要-不紧急",c:57,cl:"#f9a825"}
 ];
 
-function init(){
+var DEF={factories:D,categories:CD,priorities:PD};
+function applyData(data){
+  D=(data.factories||[]).map(function(f){
+    return {n:f.name,p:f.total,c:f.completed,pe:f.unfinished,r:0,i:0,ra:f.total>0?(f.completed/f.total):0,e:f.eval};
+  });
+  CD=data.categories||[];
+  PD=data.priorities||[];
+  renderAll();
+}
+async function init(){
+  try{
+    var res=await fetch('/api/data',{cache:'no-store'});
+    if(res.ok){
+      var j=await res.json();
+      if(j.success&&j.data&&j.data.factories){ applyData(j.data); return; }
+    }
+  }catch(e){}
   try{
     var t=D.reduce(function(s,f){return s+f.p},0);
     var co=D.reduce(function(s,f){return s+f.c},0);
@@ -269,36 +285,33 @@ function init(){
   }
 }
 
-// 刷新
+// 刷新 - 方案一：从智能表格实时拉取
 window.rd=function(){
   var el=document.getElementById('rs');
   if(!el)return;
   el.style.display='block';
   el.style.background='#fff8e1';
   el.style.color='#e65100';
-  el.innerHTML='正在从云端拉取最新数据...';
+  el.innerHTML='⏳ 正在从智能表格实时拉取最新数据...';
   var btn=document.querySelector('.ub button');
   if(btn)btn.disabled=true;
-  fetch('/api/data').then(function(r){
+  fetch('/api/refresh',{
+    method:'POST',
+    headers:{'Authorization':'Bearer sy516149756'}
+  }).then(function(r){
     if(!r.ok)throw new Error('请求失败: '+r.status);
     return r.json();
   }).then(function(res){
-    if(!res.success||!res.data)throw new Error('数据格式异常');
-    var d=res.data;
-    D=d.factories.map(function(f){
-      return {n:f.name,p:f.total,c:f.completed,pe:f.unfinished,r:0,i:0,ra:f.total>0?(f.completed/f.total):0,e:f.eval};
-    });
-    CD=d.categories.map(function(c){return {n:c.name,c:c.count};});
-    PD=d.priorities.map(function(p){return {n:p.name,c:p.count,cl:p.color};});
-    renderAll();
+    if(!res.success)throw new Error(res.error||'数据格式异常');
+    applyData(res.data);
     el.style.background='#e8f5e9';
     el.style.color='#2e7d32';
-    el.innerHTML='数据已更新！来源：'+res.source+'<br><br><button onclick="location.reload()" style="padding:6px 16px;background:#3949ab;color:#fff;border:none;border-radius:5px;font-size:13px;cursor:pointer;">刷新页面</button>';
+    el.innerHTML='✅ 数据已从智能表格实时更新！（来源：'+res.source+'）<br><small>更新时间：'+new Date().toLocaleString('zh-CN')+'</small><br><br><button onclick="location.reload()" style="padding:6px 16px;background:#3949ab;color:#fff;border:none;border-radius:5px;font-size:13px;cursor:pointer;">刷新页面</button>';
     if(btn)btn.disabled=false;
   })['catch'](function(err){
     el.style.background='#fce4ec';
     el.style.color='#c62828';
-    el.innerHTML='拉取数据失败：'+err.message+'<br><br>当前显示的是内嵌兜底数据，请检查部署配置后重试。';
+    el.innerHTML='❌ 拉取数据失败：'+err.message+'<br><br>常见原因：<br>① 企微 API 网络不通（需 Pages 能访问 qyapi.weixin.qq.com）<br>② WECOM_CORPID 或 WECOM_AGENT_SECRET 未配置<br>③ 应用无权访问该智能表格<br><br>当前显示的是内嵌兜底数据。';
     if(btn)btn.disabled=false;
   });
 };
