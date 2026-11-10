@@ -131,10 +131,10 @@ table.tb tr:hover td{background:#f5f5ff}
 <div class="c">
   <div class="ct">六、数据更新</div>
   <div class="ub">
-    <button onclick="rd()">从智能表格刷新数据</button>
-    <span class="uh">点击后将通过企微API直接从智能表格拉取最新数据并更新页面</span>
+    <button onclick="location.reload()">刷新页面（查看最新数据）</button>
+    <span class="uh">数据由本机脚本 refresh_report.py 从企业微信智能表格抓取后推送至云端。运行脚本后点击此处刷新本页即可看到最新数据。</span>
   </div>
-  <div class="us" id="rs"></div>
+  <div class="us" id="rs" style="display:block;background:#f8f9ff;color:#555;margin-top:10px;">本页数据缓存于云端 KV。如需更新数据，请在本机执行 <code>python refresh_report.py</code>（需先 <code>npm install -g @wecom/cli</code> 并扫码授权）。顶部「生成时间」为最近一次更新时间。</div>
 </div>
 
 <div class="aw">
@@ -285,35 +285,8 @@ async function init(){
   }
 }
 
-// 刷新 - 方案一：从智能表格实时拉取
-window.rd=function(){
-  var el=document.getElementById('rs');
-  if(!el)return;
-  el.style.display='block';
-  el.style.background='#fff8e1';
-  el.style.color='#e65100';
-  el.innerHTML='⏳ 正在从智能表格实时拉取最新数据...';
-  var btn=document.querySelector('.ub button');
-  if(btn)btn.disabled=true;
-  fetch('/api/refresh',{
-    method:'POST'
-  }).then(function(r){
-    if(!r.ok)throw new Error('请求失败: '+r.status);
-    return r.json();
-  }).then(function(res){
-    if(!res.success)throw new Error(res.error||'数据格式异常');
-    applyData(res.data);
-    el.style.background='#e8f5e9';
-    el.style.color='#2e7d32';
-    el.innerHTML='✅ 数据已从智能表格实时更新！（来源：'+res.source+'）<br><small>更新时间：'+new Date().toLocaleString('zh-CN')+'</small><br><br><button onclick="location.reload()" style="padding:6px 16px;background:#3949ab;color:#fff;border:none;border-radius:5px;font-size:13px;cursor:pointer;">刷新页面</button>';
-    if(btn)btn.disabled=false;
-  })['catch'](function(err){
-    el.style.background='#fce4ec';
-    el.style.color='#c62828';
-    el.innerHTML='❌ 拉取数据失败：'+err.message+'<br><br>常见原因：<br>① 企微 API 网络不通（需 Pages 能访问 qyapi.weixin.qq.com）<br>② WECOM_CORPID 或 WECOM_AGENT_SECRET 未配置<br>③ 应用无权访问该智能表格<br><br>当前显示的是内嵌兜底数据。';
-    if(btn)btn.disabled=false;
-  });
-};
+// 数据更新改由本机脚本 refresh_report.py 完成（服务端刷新需企微应用 Secret，无后台则不可用）。
+// 页面此处仅提供「刷新页面」以读取云端最新 KV 数据。
 
 // AI
 window.ai=function(){

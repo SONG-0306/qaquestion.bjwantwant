@@ -16,9 +16,9 @@ export async function onRequest(context) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   if (request.method !== 'POST') return new Response(JSON.stringify({ error: '仅支持 POST' }), { status: 405, headers });
 
-  // Bearer 鉴权
+  // Bearer 鉴权（兼容 PASSWORD / password 两种命名）
   const auth = request.headers.get('Authorization') || '';
-  const password = env.PASSWORD || '';
+  const password = env.PASSWORD || env.password || '';
   if (!auth.startsWith('Bearer ') || auth.slice(7) !== password) {
     return new Response(JSON.stringify({ error: '鉴权失败' }), { status: 403, headers });
   }
