@@ -2,12 +2,16 @@
  * POST /api/refresh
  * 从企业微信智能表格实时拉取最新数据，写入 KV 缓存并返回给前端
  *
- * 鉴权：Authorization: Bearer <PASSWORD>
+ * 触发：同源 POST /api/refresh（由页面按钮发起，无需客户端密码）
+ *
+ * 安全说明：
+ *   前端不持有任何密钥，真正的企微凭证（WECOM_CORPID / WECOM_AGENT_SECRET）
+ *   仅存在于 Cloudflare 服务端环境变量。本接口通过同源校验防止外部站点滥用企微接口。
+ *   如需更强防护，可在 Cloudflare 侧为站点开启 Access。
  *
  * 需要在 Cloudflare 环境变量中配置：
  *   WECOM_CORPID        - 企业ID（CorpID）
  *   WECOM_AGENT_SECRET  - 自建应用的凭证密钥
- *   PASSWORD             - 接口鉴权密码
  *
  * KV 绑定 Variable name：qa-question-kv
  *
@@ -48,11 +52,9 @@ export async function onRequest(context) {
     return new Response(JSON.stringify({ error: '仅支持 POST' }), { status: 405, headers });
   }
 
-  // Bearer 鉴权
-  const auth = request.headers.get('Authorization') || '';
-  const password = env.PASSWORD || '';
-  if (!auth.startsWith('Bearer ') || auth.slice(7) !== password) {
-    return new Response(JSON.stringify({ success: false, error: '鉴权失败' }), { status: 403, headers });
+  // 同源校验：仅允许本站页面触发，避免外部滥用企微接口
+  if (!isSameOrigin(request)) {
+    return new Response(JSON.stringify({ success: false, error: '仅允许同源请求' }), { status: 403, headers });
   }
 
   try {
@@ -213,4 +215,18 @@ function toNumber(val) {
     return Number(n) || 0;
   }
   return Number(val) || 0;
+}
+
+// 同源校验：比较请求来源 host 与当前 host 是否一致
+function isSameOrigin(request) {
+  const host = new URL(request.url).host;
+  const origin = request.headers.get('Origin');
+  const referer = request.headers.get('Referer');
+  const refHost = origin ? safeHost(origin) : (referer ? safeHost(referer) : null);
+  if (!refHost) return true; // 本地/无头测试（无 Origin/Referer）放行
+  return refHost === host;
+}
+
+function safeHost(v) {
+  try { return new URL(v).host; } catch { return null; }
 }

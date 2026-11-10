@@ -4,8 +4,8 @@
 从智能表格拉取最新数据，推送到 Cloudflare KV
 
 使用方法：
-  1. 在 Cloudflare Pages 设置好 PASSWORD 环境变量
-  2. 在本脚本里修改 API_URL 和 PASSWORD 的值
+  1. 在 Cloudflare Pages 设置好 PASSWORD 环境变量（与 /api/update 共用）
+  2. 本机通过环境变量 QA_PUSH_PASSWORD 提供推送密码，或用同目录 config.json
   3. 运行：python refresh_report.py
 
 定时运行（Windows）：
@@ -18,15 +18,28 @@
   0 8 * * * cd /path/to/脚本目录 && python refresh_report.py
 """
 
-import json, subprocess, sys
+import os, json, subprocess, sys
 from datetime import datetime
 from collections import Counter
 
 # ============ 修改这里 ============
 # 你的 Cloudflare Pages 域名
 API_URL = "https://want-quality-report.pages.dev"
-# 你的鉴权密码（跟 Cloudflare 环境变量 PASSWORD 保持一致）
-PASSWORD = "sy516149756"
+# 推送密码：优先读环境变量 QA_PUSH_PASSWORD，其次读同目录 config.json
+# 必须与 Cloudflare 环境变量 PASSWORD 一致。前端不再持有任何密码。
+_cfg_password = ""
+try:
+    with open(os.path.join(os.path.dirname(__file__), "config.json"), encoding="utf-8") as _f:
+        _cfg_password = json.load(_f).get("password", "")
+except Exception:
+    _cfg_password = ""
+PASSWORD = os.environ.get("QA_PUSH_PASSWORD") or _cfg_password
+if not PASSWORD:
+    print("错误：未找到推送密码。请二选一：")
+    print("  ① 设置环境变量：set QA_PUSH_PASSWORD=你的密码")
+    print("  ② 在同目录创建 config.json：{\"password\": \"你的密码\"}")
+    print("  该密码必须与 Cloudflare 环境变量 PASSWORD 一致。")
+    sys.exit(1)
 # ================================
 
 SMARTSHEET_DOCID = "s3_AG4A_waWABECNJmGuMZYOQwujgdTe"

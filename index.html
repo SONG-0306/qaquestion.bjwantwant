@@ -296,8 +296,7 @@ window.rd=function(){
   var btn=document.querySelector('.ub button');
   if(btn)btn.disabled=true;
   fetch('/api/refresh',{
-    method:'POST',
-    headers:{'Authorization':'Bearer sy516149756'}
+    method:'POST'
   }).then(function(r){
     if(!r.ok)throw new Error('请求失败: '+r.status);
     return r.json();
